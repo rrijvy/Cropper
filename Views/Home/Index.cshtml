@@ -1,9 +1,66 @@
-﻿@{ 
+﻿@{
     Layout = "_Layout";
     ViewData["Title"] = "Image Upload";
 }
 
-<div class="image-container">
-    <img id="image" src="~/image/image.jpg" />
+<input type="file" name="image" id="image" onchange="readURL(this);" />
+<div class="image_container">
+    <img id="blah" src="#" alt="your image" />
 </div>
-<button id="getCroppedCanvas">Crop</button>
+<div id="cropped_result"></div>        // Cropped image to display (only if u want)
+<button id="crop_button">Crop</button> // Will trigger crop event
+
+@section Scripts{
+<script type="text/javascript" defer>
+
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#blah').attr('src', e.target.result)
+            };
+            reader.readAsDataURL(input.files[0]);
+            setTimeout(initCropper, 1000);
+        }
+    }
+
+    function initCropper() {
+        var image = document.getElementById('blah');
+        var cropper = new Cropper(image, {
+            aspectRatio: 1 / 1,
+            crop: function (e) {
+                console.log(e.detail.x);
+                console.log(e.detail.y);
+            }
+        });
+    
+
+    // On crop button clicked
+    document.getElementById('crop_button').addEventListener('click', function () {
+        var imgurl = cropper.getCroppedCanvas().toDataURL();
+        var img = document.createElement("img");
+        img.src = imgurl;
+        document.getElementById("cropped_result").appendChild(img);
+
+        cropper.getCroppedCanvas().toBlob(function (blob) {
+            var formFile = new FormData();
+            formFile.append('formFile', blob);
+            // Use `jQuery.ajax` method
+            $.ajax({
+                url: '/Home/ImageUpload',
+                method: "POST",
+                data: formFile,
+                processData: false,
+                contentType: false,
+                success: function () {
+                    console.log('Upload success');
+                },
+                error: function () {
+                    console.log('Upload error');
+                }
+            });
+        });
+    })
+}
+</script>
+}
